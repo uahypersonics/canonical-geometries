@@ -46,8 +46,8 @@ def write_tecplot_ascii(moldline: Moldline, path: str | Path) -> Path:
     # build the three Tecplot header lines: title, quoted variable names, zone
     variables = ", ".join(f'"{name}"' for name in COLUMN_NAMES)
     header_lines = [
-        f"VARIABLES = {variables}",
         'TITLE = "moldline"',
+        f"VARIABLES = {variables}",
         f'ZONE T="moldline", I={n_points}, J=1, K=1, F=POINT',
     ]
     header = "\n".join(header_lines)

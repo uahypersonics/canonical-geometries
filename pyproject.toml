@@ -39,6 +39,10 @@ dev = [
     "pytest-cov>=4.0",
     "ruff>=0.1.0",
 ]
+docs = [
+    "zensical",
+    "mkdocstrings[python]>=0.24",
+]
 
 [project.urls]
 Homepage = "https://github.com/uahypersonics/canonical-geometries"
