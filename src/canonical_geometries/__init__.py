@@ -8,6 +8,7 @@ from importlib.metadata import (
     version,
 )
 
+from canonical_geometries.blunted_tangent_ogive import BluntedTangentOgive
 from canonical_geometries.blunted_wedge import BluntedWedge
 from canonical_geometries.moldline import Moldline, sample_moldline
 from canonical_geometries.profile import Profile2D
@@ -23,6 +24,7 @@ except PackageNotFoundError:
 
 
 __all__ = [
+    "BluntedTangentOgive",
     "BluntedWedge",
     "Moldline",
     "Profile2D",

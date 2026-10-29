@@ -8,8 +8,7 @@ from typing import Annotated
 import typer
 
 from canonical_geometries.cli.callbacks import version_callback
-from canonical_geometries.cli.cmd_geometry import build_geometry_app
-from canonical_geometries.cli.templates import GEOMETRY_COMMANDS
+from canonical_geometries.cli.cmd_geometry import GEOMETRY_HELP, build_geometry_app
 
 # --------------------------------------------------
 # root application
@@ -46,5 +45,5 @@ def main(
 # --------------------------------------------------
 # register one command group per geometry type: geometry <type> init / run
 # --------------------------------------------------
-for geometry_type in GEOMETRY_COMMANDS:
+for geometry_type in GEOMETRY_HELP:
     app.add_typer(build_geometry_app(geometry_type), name=geometry_type)

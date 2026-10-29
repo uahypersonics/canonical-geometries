@@ -42,13 +42,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-# --------------------------------------------------
-# constants
-# --------------------------------------------------
-
-# relative tolerance for accepting arc lengths just outside [0, total_length]
-# (round-off from computing s in the caller, e.g. np.linspace(0, total_length, n))
-_ARC_LENGTH_RTOL = 1.0e-12
+from canonical_geometries.profile import check_arc_length
 
 
 # --------------------------------------------------
@@ -140,7 +134,7 @@ class BluntedWedge:
         """
 
         # validate inputs
-        s_arr = self._check_arc_length(s)
+        s_arr = check_arc_length(s, self.total_length)
         r_n = self.nose_radius
         s_j = self.junction_arc_length
         theta = math.radians(self.half_angle)
@@ -178,7 +172,7 @@ class BluntedWedge:
         """
 
         # validate inputs
-        s_arr = self._check_arc_length(s)
+        s_arr = check_arc_length(s, self.total_length)
         s_j = self.junction_arc_length
         theta = math.radians(self.half_angle)
 
@@ -241,35 +235,10 @@ class BluntedWedge:
         """
 
         # validate inputs
-        s_arr = self._check_arc_length(s)
+        s_arr = check_arc_length(s, self.total_length)
 
         # constant on each piece
         on_nose = s_arr <= self.junction_arc_length
         kappa = np.where(on_nose, 1.0 / self.nose_radius, 0.0)
 
         return kappa
-
-    # --------------------------------------------------
-    # private helpers
-    # --------------------------------------------------
-    def _check_arc_length(self, s: ArrayLike) -> NDArray[np.float64]:
-        """Convert s to a float array and check that it lies in [0, total_length].
-
-        Values within a round-off tolerance outside the range are clipped onto it.
-        """
-
-        # convert to float array
-        s_arr = np.asarray(s, dtype=float)
-
-        # check range with a small round-off tolerance
-        total = self.total_length
-        tol = _ARC_LENGTH_RTOL * total
-        if np.any(s_arr < -tol) or np.any(s_arr > total + tol):
-            raise ValueError(
-                f"arc length must lie in [0, {total}], got values in [{s_arr.min()}, {s_arr.max()}]"
-            )
-
-        # clip round-off onto the valid range
-        s_clipped = np.clip(s_arr, 0.0, total)
-
-        return s_clipped

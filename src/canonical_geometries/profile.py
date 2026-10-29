@@ -10,6 +10,14 @@ from typing import Protocol
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+# --------------------------------------------------
+# constants
+# --------------------------------------------------
+
+# relative tolerance for accepting arc lengths just outside [0, total_length]
+# (round-off from computing s in the caller, e.g. np.linspace(0, total_length, n))
+_ARC_LENGTH_RTOL = 1.0e-12
+
 
 # --------------------------------------------------
 # profile interface
@@ -50,3 +58,39 @@ class Profile2D(Protocol):
     def curvature(self, s: ArrayLike) -> NDArray[np.float64]:
         """Return the surface curvature at s (positive where the surface is convex)."""
         ...
+
+
+# --------------------------------------------------
+# shared helpers for profile implementations
+# --------------------------------------------------
+def check_arc_length(s: ArrayLike, total_length: float) -> NDArray[np.float64]:
+    """Convert s to a float array and check that it lies in [0, total_length].
+
+    Values within a round-off tolerance outside the range are clipped onto it.
+
+    Args:
+        s: Arc length(s).
+        total_length: Arc length of the whole profile.
+
+    Returns:
+        Float array of arc lengths, clipped onto [0, total_length].
+
+    Raises:
+        ValueError: If any s lies outside [0, total_length] by more than round-off.
+    """
+
+    # convert to float array
+    s_arr = np.asarray(s, dtype=float)
+
+    # check range with a small round-off tolerance
+    total = total_length
+    tol = _ARC_LENGTH_RTOL * total
+    if np.any(s_arr < -tol) or np.any(s_arr > total + tol):
+        raise ValueError(
+            f"arc length must lie in [0, {total}], got values in [{s_arr.min()}, {s_arr.max()}]"
+        )
+
+    # clip round-off onto the valid range
+    s_clipped = np.clip(s_arr, 0.0, total)
+
+    return s_clipped

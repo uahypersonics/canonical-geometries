@@ -13,7 +13,8 @@ import pytest
 from typer.testing import CliRunner
 
 from canonical_geometries.cli import app
-from canonical_geometries.cli.templates import GEOMETRY_COMMANDS
+from canonical_geometries.cli.cmd_geometry import GEOMETRY_HELP
+from canonical_geometries.config import GEOMETRY_TEMPLATES
 
 runner = CliRunner()
 
@@ -45,8 +46,15 @@ def test_help_lists_every_geometry() -> None:
 
     # check
     assert result.exit_code == 0
-    for geometry_type in GEOMETRY_COMMANDS:
+    for geometry_type in GEOMETRY_HELP:
         assert geometry_type in result.output
+
+
+def test_every_command_has_a_template() -> None:
+    """The CLI's help registry and the config's template registry list the same geometry types."""
+
+    # check
+    assert set(GEOMETRY_HELP) == set(GEOMETRY_TEMPLATES)
 
 
 def test_version_flag() -> None:
@@ -63,7 +71,7 @@ def test_version_flag() -> None:
 # --------------------------------------------------
 # init
 # --------------------------------------------------
-@pytest.mark.parametrize("geometry_type", list(GEOMETRY_COMMANDS))
+@pytest.mark.parametrize("geometry_type", list(GEOMETRY_HELP))
 def test_init_writes_the_geometry_contract(geometry_type: str, tmp_path: Path) -> None:
     """Each init writes <type>.toml with that geometry's type, and it validates."""
 
@@ -112,7 +120,12 @@ def test_init_refuses_to_overwrite(tmp_path: Path) -> None:
 # --------------------------------------------------
 @pytest.mark.parametrize(
     ("geometry_type", "n_points"),
-    [("plate", 91 + 200 - 1), ("wedge", 84 + 200 - 1), ("cone", 84 + 200 - 1)],
+    [
+        ("plate", 91 + 200 - 1),
+        ("wedge", 84 + 200 - 1),
+        ("cone", 84 + 200 - 1),
+        ("tangent-ogive", 80 + 200 - 1),
+    ],
 )
 def test_init_then_run_writes_csv(geometry_type: str, n_points: int, tmp_path: Path) -> None:
     """Each template runs as-is and writes <type>.csv next to the config."""
@@ -146,6 +159,53 @@ def test_run_cone_ends_on_the_cone_surface(tmp_path: Path) -> None:
     assert table.shape == (84 + 20 - 1, 8)
     assert table[-1, 0] == pytest.approx(0.01, rel=1e-14)
     assert table[-1, 1] == pytest.approx(y_end_expected, rel=1e-13)
+
+
+def test_run_tangent_ogive_with_cylinder(tmp_path: Path) -> None:
+    """A cylinder adds a third piece: n_cylinder more points, ending at x_base + cylinder_length."""
+
+    # init, then switch the cylinder on
+    config_path = tmp_path / "tangent-ogive.toml"
+    runner.invoke(app, ["tangent-ogive", "init", "--output", str(config_path)])
+    config_text = config_path.read_text()
+    config_text = config_text.replace("cylinder_length = 0.0", "cylinder_length = 0.1")
+    config_text = config_text.replace("# n_cylinder = 50", "n_cylinder = 50")
+    config_path.write_text(config_text)
+
+    # run
+    result = runner.invoke(app, ["tangent-ogive", "run", str(config_path)])
+
+    # check: three pieces share two junction points; the last point is on the cylinder
+    assert result.exit_code == 0, result.output
+    table = np.loadtxt(tmp_path / "tangent-ogive.csv", delimiter=",", skiprows=1)
+    assert table.shape == (80 + 200 + 50 - 2, 8)
+    assert table[-1, 1] == pytest.approx(0.05, rel=1e-14)
+    np.testing.assert_allclose(table[-50:, 1], 0.05, rtol=1e-14)
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "expected_text"),
+    [
+        ("cylinder_length = 0.0", "cylinder_length = 0.1", "n_cylinder is needed"),
+        ("# n_cylinder = 50", "n_cylinder = 50", "only for geometries with a cylinder"),
+    ],
+)
+def test_run_tangent_ogive_checks_the_cylinder_points(
+    tmp_path: Path, old: str, new: str, expected_text: str
+) -> None:
+    """n_cylinder is required with a cylinder and rejected without one."""
+
+    # init, then break the cylinder/points pairing
+    config_path = tmp_path / "tangent-ogive.toml"
+    runner.invoke(app, ["tangent-ogive", "init", "--output", str(config_path)])
+    config_path.write_text(config_path.read_text().replace(old, new))
+
+    # run
+    result = runner.invoke(app, ["tangent-ogive", "run", str(config_path)])
+
+    # check
+    assert result.exit_code == 1
+    assert expected_text in result.output
 
 
 def test_run_rejects_a_config_for_another_geometry(tmp_path: Path) -> None:

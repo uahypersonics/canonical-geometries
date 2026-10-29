@@ -1,8 +1,7 @@
-"""Geometry configuration contract: parse and validate the TOML, build the profile.
+"""Moldline configuration file: parse and validate the TOML, build the profile.
 
-Used by the geometry CLI and meant to be reused by tools that read the same
-[geometry] table (e.g. grid-generator). CLI-only text (help, starter templates)
-lives in canonical_geometries.cli.templates.
+The file holds a [geometry] table (the shared contract in config.geometry), the
+[points] per profile piece, and the [output] file.
 """
 
 # --------------------------------------------------
@@ -12,80 +11,11 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from canonical_geometries.blunted_wedge import BluntedWedge
+from canonical_geometries.config.geometry import GeometryConfig
 from canonical_geometries.writers import WRITERS
-
-
-# --------------------------------------------------
-# [geometry]: one model per geometry type
-# --------------------------------------------------
-class PlateConfig(BaseModel):
-    """Flat plate with a circular leading edge (upper half)."""
-
-    # reject misspelled keys
-    model_config = ConfigDict(extra="forbid")
-
-    type: Literal["plate"]
-    nose_radius: float = Field(gt=0.0, description="Nose radius r_n [m]")
-    length: float = Field(gt=0.0, description="Axial length from the nose tip [m]")
-
-    def build(self) -> BluntedWedge:
-        """Build the profile (circular nose plus a body at zero half-angle)."""
-        profile = BluntedWedge(nose_radius=self.nose_radius, length=self.length)
-        return profile
-
-
-class WedgeConfig(BaseModel):
-    """Planar blunted wedge: circular nose plus straight body at a half-angle."""
-
-    # reject misspelled keys
-    model_config = ConfigDict(extra="forbid")
-
-    type: Literal["wedge"]
-    nose_radius: float = Field(gt=0.0, description="Nose radius r_n [m]")
-    length: float = Field(gt=0.0, description="Axial length from the nose tip [m]")
-    half_angle: float = Field(ge=0.0, lt=90.0, description="Body half-angle [deg]")
-
-    def build(self) -> BluntedWedge:
-        """Build the profile."""
-        profile = BluntedWedge(
-            nose_radius=self.nose_radius,
-            length=self.length,
-            half_angle=self.half_angle,
-        )
-        return profile
-
-
-class ConeConfig(BaseModel):
-    """Sphere-cone (axisymmetric): the profile is its meridian, the same shape as a wedge."""
-
-    # reject misspelled keys
-    model_config = ConfigDict(extra="forbid")
-
-    type: Literal["cone"]
-    nose_radius: float = Field(gt=0.0, description="Nose radius r_n [m]")
-    length: float = Field(gt=0.0, description="Axial length from the nose tip [m]")
-    half_angle: float = Field(ge=0.0, lt=90.0, description="Cone half-angle [deg]")
-
-    def build(self) -> BluntedWedge:
-        """Build the meridian profile."""
-        profile = BluntedWedge(
-            nose_radius=self.nose_radius,
-            length=self.length,
-            half_angle=self.half_angle,
-        )
-        return profile
-
-
-# the "type" key picks the model; add new geometry models to this union
-GeometryConfig = Annotated[
-    PlateConfig | WedgeConfig | ConeConfig,
-    Field(discriminator="type"),
-]
 
 
 # --------------------------------------------------
@@ -99,6 +29,9 @@ class PointsConfig(BaseModel):
 
     n_nose: int = Field(default=91, ge=2, description="Points on the nose arc")
     n_body: int = Field(default=200, ge=2, description="Points on the body")
+    n_cylinder: int | None = Field(
+        default=None, ge=2, description="Points on the cylinder (geometries with a cylinder only)"
+    )
 
 
 class OutputConfig(BaseModel):
@@ -138,6 +71,33 @@ class GeometryFileConfig(BaseModel):
     geometry: GeometryConfig
     points: PointsConfig = Field(default_factory=PointsConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
+
+    @model_validator(mode="after")
+    def _check_points_match_the_pieces(self) -> GeometryFileConfig:
+        """Check there is one point count per profile piece (n_cylinder only with a cylinder)."""
+
+        # count the pieces (building the profile also runs its own checks)
+        profile = self.geometry.build()
+        n_pieces = len(profile.junctions) + 1
+        has_cylinder = n_pieces == 3
+
+        # check: n_cylinder exactly when there is a cylinder
+        if has_cylinder and self.points.n_cylinder is None:
+            raise ValueError("[points] n_cylinder is needed: the geometry has a cylinder")
+        if not has_cylinder and self.points.n_cylinder is not None:
+            raise ValueError("[points] n_cylinder is only for geometries with a cylinder")
+
+        return self
+
+    def points_per_piece(self) -> list[int]:
+        """Point counts in order along the profile: nose, body, then cylinder if any."""
+
+        # build
+        counts = [self.points.n_nose, self.points.n_body]
+        if self.points.n_cylinder is not None:
+            counts.append(self.points.n_cylinder)
+
+        return counts
 
 
 # --------------------------------------------------

@@ -11,11 +11,22 @@ from typing import Annotated
 
 import typer
 
-from canonical_geometries.cli.templates import GEOMETRY_COMMANDS
-from canonical_geometries.config import load_config
+from canonical_geometries.config import GEOMETRY_TEMPLATES, load_config
 from canonical_geometries.moldline import sample_moldline
 from canonical_geometries.writers import write_moldline
 
+# --------------------------------------------------
+# registry: one command group per geometry type
+# --------------------------------------------------
+# keys are the command names and must match GEOMETRY_TEMPLATES (the [geometry] type values)
+GEOMETRY_HELP: dict[str, str] = {
+    "plate": "Flat plate with a circular leading edge.",
+    "wedge": "Planar blunted wedge: circular nose plus a straight body.",
+    "cone": "Sphere-cone geometry.",
+    "tangent-ogive": (
+        "Spherically blunted tangent ogive, optional cylinder."
+    ),
+}
 
 # --------------------------------------------------
 # command group factory
@@ -27,7 +38,7 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
     and the type `run` accepts differ. The commands below close over geometry_type.
 
     Args:
-        geometry_type: Key in GEOMETRY_COMMANDS, e.g. "cone".
+        geometry_type: Key in GEOMETRY_HELP, e.g. "cone".
 
     Returns:
         Typer app to register as `geometry <geometry_type>`.
@@ -36,7 +47,7 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
     # command group
     geometry_app = typer.Typer(
         name=geometry_type,
-        help=GEOMETRY_COMMANDS[geometry_type].help,
+        help=GEOMETRY_HELP[geometry_type],
         no_args_is_help=True,
     )
     default_config = Path(f"{geometry_type}.toml")
@@ -62,7 +73,7 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
 
         # write and validate the starter configuration
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(GEOMETRY_COMMANDS[geometry_type].template, encoding="utf-8")
+        output.write_text(GEOMETRY_TEMPLATES[geometry_type], encoding="utf-8")
         load_config(output, expected_type=geometry_type)
 
         typer.echo(f"Created: {output}")
@@ -84,10 +95,7 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
 
             # build the profile and sample it
             profile = geometry_config.geometry.build()
-            points_per_piece = [
-                geometry_config.points.n_nose,
-                geometry_config.points.n_body,
-            ]
+            points_per_piece = geometry_config.points_per_piece()
             moldline = sample_moldline(profile, points_per_piece)
 
             # write

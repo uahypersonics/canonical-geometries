@@ -49,6 +49,7 @@ write_moldline(moldline, "cone.dat")
 geometry plate init            # write plate.toml (blunted flat plate)
 geometry wedge init            # write wedge.toml (planar blunted wedge)
 geometry cone init             # write cone.toml  (sphere-cone)
+geometry tangent-ogive init    # write tangent-ogive.toml (blunted tangent ogive)
 
 geometry cone run cone.toml    # write the moldline next to the config
 ```

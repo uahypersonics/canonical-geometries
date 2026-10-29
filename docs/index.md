@@ -10,6 +10,7 @@ points, unit tangents, unit normals and curvature at any s, exactly.
 | Blunted flat plate | `geometry plate` |
 | Blunted wedge (planar) | `geometry wedge` |
 | Sphere-cone (axisymmetric) | `geometry cone` |
+| Spherically blunted tangent ogive (axisymmetric), optional cylinder | `geometry tangent-ogive` |
 
 ## Quick start
 
