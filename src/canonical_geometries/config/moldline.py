@@ -138,7 +138,7 @@ def load_config(path: str | Path, expected_type: str | None = None) -> GeometryF
     if expected_type is not None and geometry_type != expected_type:
         raise ValueError(
             f"{path} describes a '{geometry_type}' geometry, not '{expected_type}'; "
-            f"run it with: geometry {geometry_type} run {path}"
+            f"run it with: geometry {geometry_type} run -c {path}"
         )
 
     # resolve the output path relative to the config file

@@ -23,10 +23,9 @@ GEOMETRY_HELP: dict[str, str] = {
     "plate": "Flat plate with a circular leading edge.",
     "wedge": "Planar blunted wedge: circular nose plus a straight body.",
     "cone": "Sphere-cone geometry.",
-    "tangent-ogive": (
-        "Spherically blunted tangent ogive, optional cylinder."
-    ),
+    "tangent-ogive": ("Spherically blunted tangent ogive, optional cylinder."),
 }
+
 
 # --------------------------------------------------
 # command group factory
@@ -68,7 +67,7 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
 
         # protect existing user configuration unless overwrite was requested
         if output.exists() and not force:
-            typer.echo(f"Error: {output} already exists. Use --force to overwrite.", err=True)
+            typer.echo(f"error: {output} already exists. Use --force to overwrite.", err=True)
             raise typer.Exit(code=1)
 
         # write and validate the starter configuration
@@ -77,14 +76,14 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
         load_config(output, expected_type=geometry_type)
 
         typer.echo(f"Created: {output}")
-        typer.echo(f"Edit the file, then run: geometry {geometry_type} run {output}")
+        typer.echo(f"Edit the file, then run: geometry {geometry_type} run -c {output}")
 
     # run: build the profile from a configuration and write its moldline
     @geometry_app.command("run")
     def cmd_run(
         config: Annotated[
             Path,
-            typer.Argument(help="Configuration file."),
+            typer.Option("--config", "-c", help="Configuration file."),
         ] = default_config,
     ) -> None:
         """Generate the moldline from a configuration."""
@@ -101,7 +100,7 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
             # write
             output_path = write_moldline(moldline, geometry_config.output.file)
         except (OSError, ValueError, tomllib.TOMLDecodeError) as error:
-            typer.echo(f"Error: {error}", err=True)
+            typer.echo(f"error: {error}", err=True)
             raise typer.Exit(code=1) from None
 
         # report

@@ -133,7 +133,7 @@ def test_init_then_run_writes_csv(geometry_type: str, n_points: int, tmp_path: P
     # init, then run
     config_path = tmp_path / f"{geometry_type}.toml"
     runner.invoke(app, [geometry_type, "init", "--output", str(config_path)])
-    result = runner.invoke(app, [geometry_type, "run", str(config_path)])
+    result = runner.invoke(app, [geometry_type, "run", "-c", str(config_path)])
 
     # check
     assert result.exit_code == 0, result.output
@@ -147,7 +147,7 @@ def test_run_cone_ends_on_the_cone_surface(tmp_path: Path) -> None:
     # write config and run
     config_path = tmp_path / "cone.toml"
     config_path.write_text(CONE_CONFIG)
-    result = runner.invoke(app, ["cone", "run", str(config_path)])
+    result = runner.invoke(app, ["cone", "run", "-c", str(config_path)])
 
     # check: last point at x = L, on the line from the junction at 7 deg
     assert result.exit_code == 0, result.output
@@ -173,7 +173,7 @@ def test_run_tangent_ogive_with_cylinder(tmp_path: Path) -> None:
     config_path.write_text(config_text)
 
     # run
-    result = runner.invoke(app, ["tangent-ogive", "run", str(config_path)])
+    result = runner.invoke(app, ["tangent-ogive", "run", "-c", str(config_path)])
 
     # check: three pieces share two junction points; the last point is on the cylinder
     assert result.exit_code == 0, result.output
@@ -201,7 +201,7 @@ def test_run_tangent_ogive_checks_the_cylinder_points(
     config_path.write_text(config_path.read_text().replace(old, new))
 
     # run
-    result = runner.invoke(app, ["tangent-ogive", "run", str(config_path)])
+    result = runner.invoke(app, ["tangent-ogive", "run", "-c", str(config_path)])
 
     # check
     assert result.exit_code == 1
@@ -214,7 +214,7 @@ def test_run_rejects_a_config_for_another_geometry(tmp_path: Path) -> None:
     # write config and run with the wrong command
     config_path = tmp_path / "cone.toml"
     config_path.write_text(CONE_CONFIG)
-    result = runner.invoke(app, ["wedge", "run", str(config_path)])
+    result = runner.invoke(app, ["wedge", "run", "-c", str(config_path)])
 
     # check
     assert result.exit_code == 1
@@ -237,7 +237,7 @@ def test_run_rejects_bad_config(tmp_path: Path, bad_line: str, expected_text: st
     config_path.write_text(config_text)
 
     # run
-    result = runner.invoke(app, ["cone", "run", str(config_path)])
+    result = runner.invoke(app, ["cone", "run", "-c", str(config_path)])
 
     # check
     assert result.exit_code == 1
@@ -253,7 +253,7 @@ def test_plate_rejects_half_angle(tmp_path: Path) -> None:
     config_path.write_text(config_text)
 
     # run
-    result = runner.invoke(app, ["plate", "run", str(config_path)])
+    result = runner.invoke(app, ["plate", "run", "-c", str(config_path)])
 
     # check
     assert result.exit_code == 1
@@ -267,7 +267,7 @@ def test_run_writes_tecplot_for_dat(tmp_path: Path) -> None:
     config_text = CONE_CONFIG.replace('file = "cone.csv"', 'file = "cone.dat"')
     config_path = tmp_path / "cone.toml"
     config_path.write_text(config_text)
-    result = runner.invoke(app, ["cone", "run", str(config_path)])
+    result = runner.invoke(app, ["cone", "run", "-c", str(config_path)])
 
     # check
     assert result.exit_code == 0, result.output
@@ -283,7 +283,7 @@ def test_run_rejects_unsupported_extension(tmp_path: Path) -> None:
     config_text = CONE_CONFIG.replace('file = "cone.csv"', 'file = "cone.txt"')
     config_path = tmp_path / "cone.toml"
     config_path.write_text(config_text)
-    result = runner.invoke(app, ["cone", "run", str(config_path)])
+    result = runner.invoke(app, ["cone", "run", "-c", str(config_path)])
 
     # check: error names the extension, and nothing was written
     assert result.exit_code == 1
@@ -295,8 +295,8 @@ def test_run_missing_config_fails_cleanly(tmp_path: Path) -> None:
     """A missing config file exits with an error message, not a traceback."""
 
     # run
-    result = runner.invoke(app, ["cone", "run", str(tmp_path / "missing.toml")])
+    result = runner.invoke(app, ["cone", "run", "-c", str(tmp_path / "missing.toml")])
 
     # check
     assert result.exit_code == 1
-    assert "Error" in result.output
+    assert "error: " in result.output
