@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from canonical_geometries.cli.callbacks import version_callback
+from canonical_geometries.cli.callbacks import verbose_callback, version_callback
 from canonical_geometries.cli.cmd_geometry import GEOMETRY_HELP, build_geometry_app
 
 # --------------------------------------------------
@@ -36,10 +36,19 @@ def main(
             help="Show version and exit.",
         ),
     ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            callback=verbose_callback,
+            help="Enable verbose (debug) output.",
+        ),
+    ] = False,
 ) -> None:
     """Generate moldlines of canonical test geometries."""
 
-    del version
+    del version, verbose
 
 
 # --------------------------------------------------
