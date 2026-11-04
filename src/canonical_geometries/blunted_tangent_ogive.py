@@ -50,7 +50,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from canonical_geometries.profile import check_arc_length
+from canonical_geometries.profile import check_arc_length, check_sharp_profile_inputs
 
 
 # --------------------------------------------------
@@ -293,6 +293,41 @@ class BluntedTangentOgive:
         kappa = np.select(pieces, [1.0 / self.nose_radius, 1.0 / self.ogive_radius, 0.0])
 
         return kappa
+
+    def sharp_profile(
+        self, x_end: float, n_points: int
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """The sharp tangent ogive the blunted body follows, from its tip.
+
+        Past the base the profile continues as the cylinder the ogive is tangent to,
+        whether or not this body has one.
+
+        Args:
+            x_end: Downstream end [m], past the sharp tip (sharp_tip_x).
+            n_points: Points, evenly spaced in x.
+
+        Returns:
+            Tuple (x, y) of arrays, with y = 0 at the tip.
+
+        Raises:
+            ValueError: If x_end doesn't lie past the tip, or n_points < 2.
+        """
+
+        # validate inputs
+        x_tip = self.sharp_tip_x
+        check_sharp_profile_inputs(x_tip, x_end, n_points)
+        x_base, y_base = self.base_point
+        rho = self.ogive_radius
+
+        # ogive arc from the tip to the base (centre at (x_b, R - rho)), cylinder past it
+        x = np.linspace(x_tip, x_end, n_points)
+        distance_to_base = np.maximum(x_base - x, 0.0)
+        y = np.sqrt(np.maximum(rho**2 - distance_to_base**2, 0.0)) + y_base - rho
+
+        # the tip lies on the axis (rounding would leave a tiny y there)
+        y[0] = 0.0
+
+        return x, y
 
     # --------------------------------------------------
     # private helpers

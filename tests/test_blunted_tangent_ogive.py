@@ -269,3 +269,34 @@ def test_arc_length_outside_range_rejected(ogive: BluntedTangentOgive) -> None:
 
     with pytest.raises(ValueError, match="arc length must lie"):
         ogive.point(ogive.total_length * 1.001)
+
+
+# --------------------------------------------------
+# sharp body behind the nose
+# --------------------------------------------------
+def test_sharp_profile_is_the_sharp_ogive_the_body_follows(ogive: BluntedTangentOgive) -> None:
+    """The sharp ogive starts on the axis at sharp_tip_x, coincides with the blunted body
+    behind the junction, and continues as the cylinder past the base."""
+
+    # build, past the base
+    x_base, _ = ogive.base_point
+    x, y = ogive.sharp_profile(x_base + 0.1, 20001)
+
+    # check: the tip on the axis, at the tip angle of the arc
+    tip_angle = math.atan(LENGTH / math.sqrt(OGIVE_RADIUS**2 - LENGTH**2))
+    assert (x[0], y[0]) == (pytest.approx(ogive.sharp_tip_x), 0.0)
+    assert math.atan2(y[1] - y[0], x[1] - x[0]) == pytest.approx(tip_angle, rel=1e-3)
+
+    # check: behind the junction, on the ogive arc, the two profiles are the same
+    s_ogive = np.linspace(ogive.junction_arc_length, ogive.base_arc_length, 50)
+    x_ogive, y_ogive = ogive.point(s_ogive)
+    np.testing.assert_allclose(np.interp(x_ogive, x, y), y_ogive, rtol=0.0, atol=1e-8)
+
+    # check: the cylinder of the base radius past the base
+    np.testing.assert_allclose(y[x >= x_base], BASE_RADIUS, rtol=1e-12)
+
+
+def test_sharp_profile_rejects_an_end_ahead_of_the_tip(ogive: BluntedTangentOgive) -> None:
+    """x_end must lie past the sharp tip."""
+    with pytest.raises(ValueError, match="past the sharp tip"):
+        ogive.sharp_profile(ogive.sharp_tip_x - 0.01, 11)

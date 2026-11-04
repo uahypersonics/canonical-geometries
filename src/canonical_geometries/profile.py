@@ -5,6 +5,7 @@
 # --------------------------------------------------
 from __future__ import annotations
 
+import math
 from typing import Protocol
 
 import numpy as np
@@ -94,3 +95,20 @@ def check_arc_length(s: ArrayLike, total_length: float) -> NDArray[np.float64]:
     s_clipped = np.clip(s_arr, 0.0, total)
 
     return s_clipped
+
+
+def check_sharp_profile_inputs(x_tip: float, x_end: float, n_points: int) -> None:
+    """Check that a sharp profile runs downstream from its tip with at least two points.
+
+    Args:
+        x_tip: x position of the sharp tip [m].
+        x_end: Downstream end [m].
+        n_points: Number of points.
+
+    Raises:
+        ValueError: If x_end doesn't lie past the tip, or n_points < 2.
+    """
+    if not math.isfinite(x_end) or x_end <= x_tip:
+        raise ValueError(f"x_end must lie past the sharp tip (x = {x_tip:.6g}), got {x_end}")
+    if n_points < 2:
+        raise ValueError(f"n_points must be at least 2, got {n_points}")

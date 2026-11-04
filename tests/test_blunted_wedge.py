@@ -298,3 +298,45 @@ def test_round_off_at_the_ends_accepted(plate: BluntedWedge) -> None:
 
     # check clipped onto the end points
     np.testing.assert_allclose(x, [0.0, LENGTH], atol=1e-18, rtol=1e-14)
+
+
+# --------------------------------------------------
+# sharp body behind the nose
+# --------------------------------------------------
+def test_sharp_profile_is_the_body_extended_to_its_virtual_tip(wedge: BluntedWedge) -> None:
+    """The sharp wedge starts on the axis at r_n (1 - 1 / sin theta) and coincides with the
+    blunted body behind the junction."""
+
+    # build
+    x_tip = wedge.sharp_tip_x
+    x, y = wedge.sharp_profile(LENGTH, 2001)
+
+    # check: the virtual tip, upstream of the stagnation point
+    theta = math.radians(HALF_ANGLE)
+    assert x_tip == pytest.approx(NOSE_RADIUS * (1.0 - 1.0 / math.sin(theta)), rel=1e-12)
+    assert x_tip < 0.0
+    assert (x[0], y[0]) == (pytest.approx(x_tip), 0.0)
+    assert x[-1] == pytest.approx(LENGTH)
+
+    # check: behind the junction the two profiles are the same line
+    s_body = np.linspace(wedge.junction_arc_length, wedge.total_length, 50)
+    x_body, y_body = wedge.point(s_body)
+    np.testing.assert_allclose(np.interp(x_body, x, y), y_body, rtol=0.0, atol=1e-12)
+
+
+def test_a_flat_plate_has_no_sharp_tip(plate: BluntedWedge) -> None:
+    """A zero half-angle body never meets the axis."""
+    with pytest.raises(ValueError, match="no sharp tip"):
+        plate.sharp_profile(LENGTH, 11)
+
+
+@pytest.mark.parametrize(
+    ("x_end", "n_points", "message"),
+    [(-1.0, 11, "past the sharp tip"), (LENGTH, 1, "at least 2")],
+)
+def test_sharp_profile_rejects_bad_inputs(
+    wedge: BluntedWedge, x_end: float, n_points: int, message: str
+) -> None:
+    """An end ahead of the tip, or fewer than two points, fail clearly."""
+    with pytest.raises(ValueError, match=message):
+        wedge.sharp_profile(x_end, n_points)

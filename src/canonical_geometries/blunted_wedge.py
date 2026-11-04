@@ -29,6 +29,12 @@ the body:
 Equal steps in s on the nose are equal steps in angle, and the nose normals point
 radially away from the nose centre, so a constant-height grid around the nose is a
 polar grid. At s = s_j exactly, the curvature is reported as the nose value.
+
+Sharp body
+----------
+For half_angle > 0 the straight body, extended forward, meets the axis at the
+virtual tip x = r_n (1 - 1 / sin theta), upstream of the stagnation point. The sharp
+wedge or cone from there is the body the blunted one follows behind its nose.
 """
 
 # --------------------------------------------------
@@ -42,7 +48,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from canonical_geometries.profile import check_arc_length
+from canonical_geometries.profile import check_arc_length, check_sharp_profile_inputs
 
 
 # --------------------------------------------------
@@ -116,6 +122,19 @@ class BluntedWedge:
         """Arc lengths where the pieces meet: the nose-body junction."""
         junctions = np.array([self.junction_arc_length])
         return junctions
+
+    @property
+    def sharp_tip_x(self) -> float:
+        """x position of the sharp body's virtual tip, r_n (1 - 1 / sin theta).
+
+        Raises:
+            ValueError: If half_angle is 0 (a flat plate has no sharp tip).
+        """
+        if self.half_angle == 0.0:
+            raise ValueError("a flat plate (half_angle = 0) has no sharp tip")
+        theta = math.radians(self.half_angle)
+        x_tip = self.nose_radius * (1.0 - 1.0 / math.sin(theta))
+        return x_tip
 
     # --------------------------------------------------
     # public evaluation methods
@@ -242,3 +261,31 @@ class BluntedWedge:
         kappa = np.where(on_nose, 1.0 / self.nose_radius, 0.0)
 
         return kappa
+
+    def sharp_profile(
+        self, x_end: float, n_points: int
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """The sharp wedge or cone the blunted body follows, from its virtual tip.
+
+        Args:
+            x_end: Downstream end [m], past the virtual tip.
+            n_points: Points, evenly spaced in x.
+
+        Returns:
+            Tuple (x, y) of arrays, with y = 0 at the tip.
+
+        Raises:
+            ValueError: If half_angle is 0, x_end doesn't lie past the tip, or
+                n_points < 2.
+        """
+
+        # validate inputs
+        x_tip = self.sharp_tip_x
+        check_sharp_profile_inputs(x_tip, x_end, n_points)
+
+        # straight line from the virtual tip at the half-angle
+        theta = math.radians(self.half_angle)
+        x = np.linspace(x_tip, x_end, n_points)
+        y = (x - x_tip) * math.tan(theta)
+
+        return x, y
