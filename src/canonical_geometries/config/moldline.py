@@ -147,3 +147,33 @@ def load_config(path: str | Path, expected_type: str | None = None) -> GeometryF
     resolved_config = config.model_copy(update={"output": resolved_output})
 
     return resolved_config
+
+
+def load_geometry(path: str | Path) -> GeometryConfig:
+    """Read the body from a geometry TOML file, for tools that build on it.
+
+    flow-theory and grid-generator point at the same geometry file (geometry.toml),
+    so the body is defined once for a case. The whole file is validated, its [points]
+    and [output] too, so a file that `geometry <type> run` would refuse is refused
+    here as well.
+
+    Args:
+        path: Geometry file, e.g. geometry.toml.
+
+    Returns:
+        The validated [geometry] model (PlateConfig, WedgeConfig, ConeConfig or
+        TangentOgiveConfig); its build() gives the profile.
+
+    Raises:
+        OSError: If the file can't be read.
+        tomllib.TOMLDecodeError: If the file isn't valid TOML.
+        pydantic.ValidationError: If a value is missing, misspelled or out of range.
+    """
+
+    # read and validate the whole file
+    geometry_file = load_config(path)
+
+    # extract the body
+    geometry = geometry_file.geometry
+
+    return geometry

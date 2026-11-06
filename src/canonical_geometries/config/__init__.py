@@ -12,6 +12,7 @@ from canonical_geometries.config.moldline import (
     OutputConfig,
     PointsConfig,
     load_config,
+    load_geometry,
 )
 from canonical_geometries.config.templates import GEOMETRY_TEMPLATES
 
@@ -26,4 +27,5 @@ __all__ = [
     "TangentOgiveConfig",
     "WedgeConfig",
     "load_config",
+    "load_geometry",
 ]

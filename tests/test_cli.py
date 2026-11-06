@@ -14,7 +14,7 @@ from typer.testing import CliRunner
 
 from canonical_geometries.cli import app
 from canonical_geometries.cli.cmd_geometry import GEOMETRY_HELP
-from canonical_geometries.config import GEOMETRY_TEMPLATES
+from canonical_geometries.config import GEOMETRY_TEMPLATES, load_geometry
 
 runner = CliRunner()
 
@@ -72,17 +72,25 @@ def test_version_flag() -> None:
 # init
 # --------------------------------------------------
 @pytest.mark.parametrize("geometry_type", list(GEOMETRY_HELP))
-def test_init_writes_the_geometry_contract(geometry_type: str, tmp_path: Path) -> None:
-    """Each init writes <type>.toml with that geometry's type, and it validates."""
+def test_init_writes_the_geometry_contract(
+    geometry_type: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Each init writes geometry.toml with that geometry's type, and run reads it by default.
 
-    # run in a temporary folder so the default file name is used
-    config_path = tmp_path / f"{geometry_type}.toml"
-    result = runner.invoke(app, [geometry_type, "init", "--output", str(config_path)])
+    One name for every type: flow-theory and grid-generator point at geometry.toml.
+    """
+
+    # init and run in a temporary folder, so the default file name is used
+    monkeypatch.chdir(tmp_path)
+    init_result = runner.invoke(app, [geometry_type, "init"])
+    run_result = runner.invoke(app, [geometry_type, "run"])
 
     # check
-    assert result.exit_code == 0, result.output
+    config_path = tmp_path / "geometry.toml"
+    assert init_result.exit_code == 0, init_result.output
     assert f'type = "{geometry_type}"' in config_path.read_text()
-    assert f"geometry {geometry_type} run" in result.output
+    assert f"geometry {geometry_type} run" in init_result.output
+    assert run_result.exit_code == 0, run_result.output
 
 
 def test_plate_contract_has_no_half_angle(tmp_path: Path) -> None:
@@ -300,3 +308,36 @@ def test_run_missing_config_fails_cleanly(tmp_path: Path) -> None:
     # check
     assert result.exit_code == 1
     assert "error: " in result.output
+
+
+# --------------------------------------------------
+# load_geometry: the body for other tools
+# --------------------------------------------------
+def test_load_geometry_returns_the_body_of_a_geometry_file(tmp_path: Path) -> None:
+    """load_geometry gives the [geometry] model other tools build on, validated."""
+
+    # a cone geometry file
+    config_path = tmp_path / "geometry.toml"
+    config_path.write_text(CONE_CONFIG)
+
+    # read
+    geometry = load_geometry(config_path)
+
+    # check: the cone, with its values, and a profile that ends at its length
+    assert geometry.type == "cone"
+    assert geometry.half_angle == 7.0
+    profile = geometry.build()
+    x_end, _ = profile.point(profile.total_length)
+    assert float(x_end) == pytest.approx(geometry.length, rel=1e-14)
+
+
+def test_load_geometry_refuses_a_file_run_would_refuse(tmp_path: Path) -> None:
+    """A misspelled key fails in load_geometry too, not only in geometry run."""
+
+    # a cone with a misspelled key
+    config_path = tmp_path / "geometry.toml"
+    config_path.write_text(CONE_CONFIG.replace("half_angle", "half_angel"))
+
+    # check
+    with pytest.raises(ValueError, match="half_angel"):
+        load_geometry(config_path)

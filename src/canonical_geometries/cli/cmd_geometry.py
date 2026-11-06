@@ -49,7 +49,9 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
         help=GEOMETRY_HELP[geometry_type],
         no_args_is_help=True,
     )
-    default_config = Path(f"{geometry_type}.toml")
+    # one name for every geometry type: other tools (flow-theory, grid-generator) point
+    # at geometry.toml for the body, so a case folder holds it once
+    default_config = Path("geometry.toml")
 
     # init: write the starter configuration for this geometry
     @geometry_app.command("init")
@@ -77,6 +79,9 @@ def build_geometry_app(geometry_type: str) -> typer.Typer:
 
         typer.echo(f"Created: {output}")
         typer.echo(f"Edit the file, then run: geometry {geometry_type} run -c {output}")
+        typer.echo(
+            'flow-theory and grid-generator read the body from it: geometry = "geometry.toml"'
+        )
 
     # run: build the profile from a configuration and write its moldline
     @geometry_app.command("run")

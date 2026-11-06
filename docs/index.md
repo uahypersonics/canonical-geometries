@@ -15,8 +15,8 @@ points, unit tangents, unit normals and curvature at any s, exactly.
 ## Quick start
 
 ```bash
-geometry cone init             # write cone.toml
-geometry cone run cone.toml    # write the moldline next to the config
+geometry cone init             # write geometry.toml
+geometry cone run              # write the moldline next to the config
 ```
 
 See [Installation](installation.md) to get started. More documentation will follow.

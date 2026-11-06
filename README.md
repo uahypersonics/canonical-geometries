@@ -46,13 +46,17 @@ write_moldline(moldline, "cone.dat")
 **CLI:**
 
 ```bash
-geometry plate init            # write plate.toml (blunted flat plate)
-geometry wedge init            # write wedge.toml (planar blunted wedge)
-geometry cone init             # write cone.toml  (sphere-cone)
-geometry tangent-ogive init    # write tangent-ogive.toml (blunted tangent ogive)
+geometry plate init            # write geometry.toml (blunted flat plate)
+geometry wedge init            # write geometry.toml (planar blunted wedge)
+geometry cone init             # write geometry.toml (sphere-cone)
+geometry tangent-ogive init    # write geometry.toml (blunted tangent ogive)
 
-geometry cone run cone.toml    # write the moldline next to the config
+geometry cone run              # write the moldline next to geometry.toml
 ```
+
+Every geometry type writes `geometry.toml`. flow-theory and grid-generator read the
+body from it (`geometry = "geometry.toml"` in their configs), so a case defines its
+body once.
 
 ## Documentation
 
