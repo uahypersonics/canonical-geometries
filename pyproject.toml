@@ -7,7 +7,7 @@ name = "canonical-geometries"
 dynamic = ["version"]
 description = "Exact 2D profiles of canonical high-speed test geometries (blunted plate, cone, ogive, ...)"
 readme = "README.md"
-license = "BSD-3-Clause"
+license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [
