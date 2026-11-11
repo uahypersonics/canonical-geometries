@@ -4,15 +4,15 @@
 # site metadata
 # --------------------------------------------------
 site_name: canonical-geometries
-site_url: https://uahypersonics.github.io/canonical-geometries
+site_url: https://hypersonic-aero.github.io/canonical-geometries
 site_author: Christoph Hader
 site_description: Exact 2D profiles of canonical high-speed test geometries, and their moldlines.
 
 # --------------------------------------------------
 # github repository (adds link in top right corner)
 # --------------------------------------------------
-repo_name: uahypersonics/canonical-geometries
-repo_url: https://github.com/uahypersonics/canonical-geometries
+repo_name: hypersonic-aero/canonical-geometries
+repo_url: https://github.com/hypersonic-aero/canonical-geometries
 edit_uri: edit/main/docs/
 
 # --------------------------------------------------

@@ -2,10 +2,10 @@
 
 Exact 2D profiles of canonical high-speed test geometries, and a CLI that writes their moldlines.
 
-[![Test](https://github.com/uahypersonics/canonical-geometries/actions/workflows/test.yml/badge.svg)](https://github.com/uahypersonics/canonical-geometries/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/uahypersonics/canonical-geometries/branch/main/graph/badge.svg)](https://codecov.io/gh/uahypersonics/canonical-geometries)
+[![Test](https://github.com/hypersonic-aero/canonical-geometries/actions/workflows/test.yml/badge.svg)](https://github.com/hypersonic-aero/canonical-geometries/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/hypersonic-aero/canonical-geometries/branch/main/graph/badge.svg)](https://codecov.io/gh/hypersonic-aero/canonical-geometries)
 [![PyPI](https://img.shields.io/pypi/v/canonical-geometries)](https://pypi.org/project/canonical-geometries/)
-[![Docs](https://img.shields.io/badge/docs-zensical-blue)](https://uahypersonics.github.io/canonical-geometries/)
+[![Docs](https://img.shields.io/badge/docs-zensical-blue)](https://hypersonic-aero.github.io/canonical-geometries/)
 [![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-≥3.11-blue.svg)](https://www.python.org/downloads/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -60,7 +60,7 @@ body once.
 
 ## Documentation
 
-Full documentation: https://uahypersonics.github.io/canonical-geometries
+Full documentation: https://hypersonic-aero.github.io/canonical-geometries
 
 ## Testing
 

@@ -45,8 +45,8 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/uahypersonics/canonical-geometries"
-Repository = "https://github.com/uahypersonics/canonical-geometries"
+Homepage = "https://github.com/hypersonic-aero/canonical-geometries"
+Repository = "https://github.com/hypersonic-aero/canonical-geometries"
 
 [tool.setuptools.packages.find]
 where = ["src"]
